@@ -913,7 +913,7 @@ int run_console(const char* command)
 		if (keycode >= 0 && keycode <= KEY_MAX)
 		{
 			//sym + delete kills bash
-			if (ui_key_pressed(KEY_RIGHTALT) && ui_key_pressed(KEY_BACKSPACE) && ((keycode == KEY_RIGHTALT) || (keycode == KEY_BACKSPACE)))
+			if (ui_key_pressed(KEY_APOSTROPHE) && ui_key_pressed(KEY_BACKSPACE) && ((keycode == KEY_APOSTROPHE) || (keycode == KEY_BACKSPACE)))
 			{
 				force_quit = 1;
 				continue;
