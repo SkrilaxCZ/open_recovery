@@ -265,7 +265,7 @@ static void draw_user_input_locked()
 
 extern void draw_console_locked();
 
-static void draw_screen_locked(void)
+static void draw_screen_locked()
 {	
 	switch (current_view_mode)
 	{
@@ -439,7 +439,7 @@ static void draw_screen_locked(void)
 
 // Redraw everything on the screen and flip the screen (make it visible).
 // Should only be called with ui_update_mutex locked.
-void update_screen_locked(void)
+void update_screen_locked()
 {
 	draw_screen_locked();
 	gr_flip();
@@ -447,7 +447,7 @@ void update_screen_locked(void)
 
 // Updates only the progress bar, if possible, otherwise redraws the screen.
 // Should only be called with ui_update_mutex locked.
-void update_progress_locked(void)
+void update_progress_locked()
 {
 	if (show_text || !gPagesIdentical) 
 	{
@@ -772,12 +772,40 @@ static void* kbd_thread(void* cookie)
 	return NULL;
 }
 
-void ui_init(void)
+void ui_screen_on()
+{
+	FILE* ledfd;
+	
+	// LCD
+	ledfd = fopen(LCD_BACKLIGHT_FILE, "w");
+	fwrite("255\n", 1, strlen("255\n"), ledfd);
+	fclose(ledfd);
+
+	// Keyboard
+	ledfd = fopen(KEYBOARD_BACKLIGHT_FILE, "w");
+	fwrite("255\n", 1, strlen("255\n"), ledfd);
+	fclose(ledfd);
+}
+
+void ui_screen_off()
+{
+	FILE* ledfd;
+	
+	// LCD
+	ledfd = fopen(LCD_BACKLIGHT_FILE, "w");
+	fwrite("0\n", 1, strlen("0\n"), ledfd);
+	fclose(ledfd);
+
+	// Keyboard
+	ledfd = fopen(KEYBOARD_BACKLIGHT_FILE, "w");
+	fwrite("0\n", 1, strlen("0\n"), ledfd);
+	fclose(ledfd);
+}
+
+void ui_init()
 {
 	gr_init();
 	ev_init(input_callback, NULL);
-
-	FILE* ledfd;
 	
 	gr_font_size(&char_width, &char_height);
 	fprintf(stderr, "Framebuffer size: %d x %d\n", gr_fb_height(), gr_fb_width());
@@ -842,14 +870,7 @@ void ui_init(void)
 	if (text_cols > MAX_COLS - 1)
 		text_cols = MAX_COLS - 1;
 
-	// Backlight
-	ledfd = fopen(LCD_BACKLIGHT_FILE, "w");
-	fwrite("255\n", 1, strlen("255\n"), ledfd);
-	fclose(ledfd);
-
-	ledfd = fopen(KEYBOARD_BACKLIGHT_FILE, "w");
-	fwrite("255\n", 1, strlen("255\n"), ledfd);
-	fclose(ledfd);
+	ui_screen_on();
 
 	// Threads
 	pthread_t t;

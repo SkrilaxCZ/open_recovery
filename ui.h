@@ -147,10 +147,14 @@ void ui_user_input(const char* header, char* reply);
 //updating
 extern pthread_mutex_t ui_update_mutex;
 
-void update_screen_locked(void);
-void update_progress_locked(void);
+void update_screen_locked();
+void update_progress_locked();
 
 //battery
 void ui_set_battery_data(int battery_charge, int battery_charging);
+
+//screen on/off
+void ui_screen_on();
+void ui_screen_off();
 
 #endif //UI_H

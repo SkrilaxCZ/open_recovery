@@ -115,6 +115,12 @@ static const char* BASE_MENU_TITLE[] =
 //poweroff
 static int poweroff_on_exit = 0;
 
+#define SCREEN_TIMEOUT_TIMER_OFF     -1
+#define SCREEN_TIMEOUT_SCREEN_OFF    -2
+
+static volatile int screen_off_timer = SCREEN_TIMEOUT_TIMER_OFF;
+static pthread_mutex_t screen_off_timer_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 //allow mod header, mod version
 static const char** MENU_TITLE;
 
@@ -225,6 +231,18 @@ static void* battery_thread(void *cookie)
 		ui_set_battery_data(battery_charge, battery_charging);
 		
 		fclose(f);
+		
+		pthread_mutex_lock(&screen_off_timer_mutex);
+		if (screen_off_timer >= 0)
+			screen_off_timer++;
+			
+		if (screen_off_timer == 15)
+		{
+			ui_screen_off();
+			screen_off_timer = SCREEN_TIMEOUT_SCREEN_OFF;
+		}
+		pthread_mutex_unlock(&screen_off_timer_mutex);
+		
 		usleep(2000000);
 	}
 	
@@ -487,14 +505,47 @@ static int get_menu_selection(const char** headers, const char** items, unsigned
 		if (start_sel == initial_start_sel)
 			break;
 	}
-	
+
 	ui_start_menu(headers, items, title_length, start_sel);
+	
 	int selected = start_sel;
+	int key_timeout = 0;
 	int chosen_item = -1;
 	
 	while (chosen_item < 0) 
 	{
+		// activate screen off timer
+		if (key_timeout)
+			key_timeout = 0;
+		else
+		{
+			pthread_mutex_lock(&screen_off_timer_mutex);
+			screen_off_timer = 0;
+			pthread_mutex_unlock(&screen_off_timer_mutex);
+		}
+		
 		int key = ui_wait_key();
+		
+		if (key < 0)
+		{
+			key_timeout = 1;
+			continue;
+		}
+		
+		pthread_mutex_lock(&screen_off_timer_mutex);
+		
+		// if screen is off, turn it on and drop the key
+		if (screen_off_timer == SCREEN_TIMEOUT_SCREEN_OFF)
+		{
+			ui_screen_on();
+			pthread_mutex_unlock(&screen_off_timer_mutex);
+			continue;
+		}
+			
+		// deactivate screen off timer
+		screen_off_timer = SCREEN_TIMEOUT_TIMER_OFF;
+		pthread_mutex_unlock(&screen_off_timer_mutex);
+		
 		int visible = ui_text_visible();
 		
 		int action = menu_handle_key(key, visible);
@@ -544,7 +595,6 @@ static int get_menu_selection(const char** headers, const char** items, unsigned
 		} 
 		else if (!menu_only) 
 			chosen_item = action;
-		
 	}
 	
 	//check first if to hide menu (don't do on menu changes or tags),
