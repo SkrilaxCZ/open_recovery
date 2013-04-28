@@ -20,7 +20,7 @@
 #include <stdio.h>
 
 //Open Recovery Version
-#define OPEN_RECOVERY_VERSION_NUMBER "2.04"
+#define OPEN_RECOVERY_VERSION_NUMBER "2.05"
 #define OPEN_RECOVERY_VERSION "Version "OPEN_RECOVERY_VERSION_NUMBER
 
 //Photon Q
