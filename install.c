@@ -561,6 +561,7 @@ static char* copy_package(const char* original_path)
 int install_package(const char* path, int* wipe_cache, const char* install_file)
 {
 	FILE* install_log = fopen_path(install_file, "w");
+	int result = INSTALL_SUCCESS;
 	if (install_log) 
 	{
 		fputs(path, install_log);
@@ -577,18 +578,29 @@ int install_package(const char* path, int* wipe_cache, const char* install_file)
 	{
 		LOGI("Copying package: %s\n", path);
 		package_copy = copy_package(path);
+
+		if (!package_copy)
+		{
+			result = INSTALL_CORRUPT;
+			goto end;
+		}
+			
+
 		path = package_copy;
 	}
 
 	ensure_common_roots_unmounted();
+	//keep cache mounted
+	ensure_path_mounted("/cache");
 	ui_set_background(BACKGROUND_ICON_INSTALLING);
-	int result = really_install_package(path, wipe_cache);
+	result = really_install_package(path, wipe_cache);
 	ui_set_background(BACKGROUND_ICON_ERROR);
 	ensure_common_roots_mounted();
 
 	if (package_copy)
 		free(package_copy);
 
+end:
 	if (install_log) 
 	{
 		fputc(result == INSTALL_SUCCESS ? '1' : '0', install_log);

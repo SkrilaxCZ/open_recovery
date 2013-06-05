@@ -353,23 +353,25 @@ void console_set_front_term_color(int ascii_code)
 
 static void console_put_char(char c)
 {
+	int end;
+
 	switch(c)
 	{
 		case '\n':
-			fprintf(stderr, "Row %d, Column %d, Char \"LINE BREAK\"\n", console_cur_row, console_cur_column);
+			//fprintf(stderr, "Row %d, Column %d, Char \"LINE BREAK\"\n", console_cur_row, console_cur_column);
 			console_cur_row++;
 			console_force_top_row_reserve++;
 			break;
 		
 		case '\r':
-			fprintf(stderr, "Row %d, Column %d, Char \"CARRIAGE RETURN\"\n", console_cur_row, console_cur_column);
+			//fprintf(stderr, "Row %d, Column %d, Char \"CARRIAGE RETURN\"\n", console_cur_row, console_cur_column);
 			console_cur_column = 0;
 			break;
 
 		case '\t':
-			fprintf(stderr, "Row %d, Column %d, Char \"TAB\"\n", console_cur_row, console_cur_column);
+			//fprintf(stderr, "Row %d, Column %d, Char \"TAB\"\n", console_cur_row, console_cur_column);
 			//tab is per 5
-			int end = console_cur_column + (5 - console_cur_column % 5);
+			end = console_cur_column + (5 - console_cur_column % 5);
 
 			if (end >= console_screen_columns - 2)
 			{
@@ -392,7 +394,7 @@ static void console_put_char(char c)
 			break;
 
 		case '\b':
-			fprintf(stderr, "Row %d, Column %d, Char \"BACKSPACE\"\n", console_cur_row, console_cur_column);
+			//fprintf(stderr, "Row %d, Column %d, Char \"BACKSPACE\"\n", console_cur_row, console_cur_column);
 			if (console_cur_column == 0)
 			{
 				if (console_cur_row == 0)
@@ -410,9 +412,9 @@ static void console_put_char(char c)
 			break;
 
 		default:
+			//fprintf(stderr, "Row %d, Column %d, Char %d\n", console_cur_row, console_cur_column, c);
 			console_text_matrix[console_cur_row][console_cur_column] = c;
 			console_color_matrix[console_cur_row][console_cur_column] = console_current_color;
-			fprintf(stderr, "Row %d, Column %d, Char %d\n", console_cur_row, console_cur_column, c);
 			console_cur_column++;
 
 			if (console_cur_column > console_screen_columns - 2)
@@ -427,7 +429,7 @@ static void console_put_char(char c)
 	if (console_cur_row == CONSOLE_MATRIX_TOTAL_ROWS)
 	{
 		int shift = CONSOLE_MATRIX_BUFFER_ROWS;
-		fprintf(stderr, "Shifting the rows by %d.\n", shift);
+		//fprintf(stderr, "Shifting the rows by %d.\n", shift);
 		int j;
 
 		for (j = 0; j < CONSOLE_MATRIX_TOTAL_ROWS - CONSOLE_MATRIX_BUFFER_ROWS; j++)

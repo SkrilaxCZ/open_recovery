@@ -30,6 +30,7 @@
 #include "install.h"
 
 static const char *INTERNAL_SDCARD_ROOT = "/mnt/sdcard";
+static const char *INTERNAL_SDCARD_LEGACY_ROOT = "/sdcard";
 
 static int num_volumes = 0;
 static Volume* device_volumes = NULL;
@@ -157,7 +158,8 @@ Volume* volume_for_path(const char* path)
 int ensure_path_mounted(const char* path) 
 {
 	// internal sdcard is in data partition
-	if (!strncmp(path, INTERNAL_SDCARD_ROOT, strlen(INTERNAL_SDCARD_ROOT)))
+	if (!strncmp(path, INTERNAL_SDCARD_ROOT, strlen(INTERNAL_SDCARD_ROOT)) ||
+		!strncmp(path, INTERNAL_SDCARD_LEGACY_ROOT, strlen(INTERNAL_SDCARD_LEGACY_ROOT)))
 		path = "/data";
 
 	Volume* v = volume_for_path(path);
