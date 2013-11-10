@@ -53,6 +53,7 @@
 
 #define LCD_BACKLIGHT_FILE      "/sys/class/backlight/lcd-backlight/brightness"
 #define KEYBOARD_BACKLIGHT_FILE "/sys/class/leds/keyboard-backlight/brightness"
+#define GOVERNOR_FILE           "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
 
 ui_parameters_t ui_parameters = 
 {
@@ -775,6 +776,7 @@ static void* kbd_thread(void* cookie)
 void ui_screen_on()
 {
 	FILE* ledfd;
+	FILE* govfd;
 	
 	// LCD
 	ledfd = fopen(LCD_BACKLIGHT_FILE, "w");
@@ -785,11 +787,17 @@ void ui_screen_on()
 	ledfd = fopen(KEYBOARD_BACKLIGHT_FILE, "w");
 	fwrite("255\n", 1, strlen("255\n"), ledfd);
 	fclose(ledfd);
+
+	// Governor
+	govfd = fopen(GOVERNOR_FILE, "w");
+	fwrite("performance\n", 1, strlen("performance\n"), govfd);
+	fclose(govfd);
 }
 
 void ui_screen_off()
 {
 	FILE* ledfd;
+	FILE* govfd;
 	
 	// LCD
 	ledfd = fopen(LCD_BACKLIGHT_FILE, "w");
@@ -800,6 +808,11 @@ void ui_screen_off()
 	ledfd = fopen(KEYBOARD_BACKLIGHT_FILE, "w");
 	fwrite("0\n", 1, strlen("0\n"), ledfd);
 	fclose(ledfd);
+
+	// Governor
+	govfd = fopen(GOVERNOR_FILE, "w");
+	fwrite("powersave\n", 1, strlen("powersave\n"), govfd);
+	fclose(govfd);
 }
 
 void ui_init()

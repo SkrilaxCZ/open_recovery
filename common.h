@@ -20,11 +20,11 @@
 #include <stdio.h>
 
 //Open Recovery Version
-#define OPEN_RECOVERY_VERSION_NUMBER "2.06"
+#define OPEN_RECOVERY_VERSION_NUMBER "2.07"
 #define OPEN_RECOVERY_VERSION "Version "OPEN_RECOVERY_VERSION_NUMBER
 
 //Photon Q
-#define OPEN_RECOVERY_NAME "Photon Q"
+#define OPEN_RECOVERY_NAME "Motorola Photon Q"
 #define OPEN_RECOVERY_NAVIG "Use arrow keys to highlight; enter to select."
 
 #define MOD_AUTHOR_PROP "ro.or.mod.author"
@@ -56,7 +56,6 @@ typedef struct
 	// "yaffs2" or "ext4" or "vfat"
 	const char* fs_type;
 
-	// MTD partition name if fs_type == "yaffs"
 	// block device if fs_type == "ext4" or "vfat"
 	const char* device;
 

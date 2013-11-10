@@ -266,9 +266,11 @@ void init_keypad_layout()
 	capslock_led = fopen(CAPSLOCK_BACKLIGHT_FILE, "w");
 	if (capslock_led == NULL)
 		fprintf(stderr, "Could not open Caps Lock LED.\n");
-		
-	fwrite("0\n", 1, strlen("0\n"), capslock_led);
-	fflush(capslock_led);
+	else
+	{
+		fwrite("0\n", 1, strlen("0\n"), capslock_led);
+		fflush(capslock_led);
+	}
 }
 
 char resolve_keypad_character(int keycode, int shift)

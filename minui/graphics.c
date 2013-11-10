@@ -30,7 +30,6 @@
 
 #include <pixelflinger/pixelflinger.h>
 
-#include "font_10x18.h"
 #include "minui.h"
 
 #if defined(RECOVERY_BGRA)
@@ -43,6 +42,20 @@
 #define PIXEL_FORMAT GGL_PIXEL_FORMAT_RGB_565
 #define PIXEL_SIZE   2
 #endif
+
+struct {
+    unsigned width;
+    unsigned height;
+    unsigned cwidth;
+    unsigned cheight;
+    const char* resource;
+} font = {
+    .width    = 960,
+    .height   = 18,
+    .cwidth   = 10,
+    .cheight  = 18,
+    .resource = "font"
+};
 
 typedef struct {
     GGLSurface texture;
@@ -70,19 +83,22 @@ static int get_framebuffer(GGLSurface *fb)
     void *bits;
 
     fd = open("/dev/graphics/fb0", O_RDWR);
-    if (fd < 0) {
+    if (fd < 0)
+    {
         perror("cannot open fb0");
         return -1;
     }
 
-    if (ioctl(fd, FBIOGET_VSCREENINFO, &vi) < 0) {
+    if (ioctl(fd, FBIOGET_VSCREENINFO, &vi) < 0)
+    {
         perror("failed to get fb0 info");
         close(fd);
         return -1;
     }
 
     vi.bits_per_pixel = PIXEL_SIZE * 8;
-    if (PIXEL_FORMAT == GGL_PIXEL_FORMAT_BGRA_8888) {
+    if (PIXEL_FORMAT == GGL_PIXEL_FORMAT_BGRA_8888)
+    {
       vi.red.offset     = 8;
       vi.red.length     = 8;
       vi.green.offset   = 16;
@@ -91,7 +107,9 @@ static int get_framebuffer(GGLSurface *fb)
       vi.blue.length    = 8;
       vi.transp.offset  = 0;
       vi.transp.length  = 8;
-    } else if (PIXEL_FORMAT == GGL_PIXEL_FORMAT_RGBX_8888) {
+    }
+    else if (PIXEL_FORMAT == GGL_PIXEL_FORMAT_RGBX_8888)
+    {
       vi.red.offset     = 24;
       vi.red.length     = 8;
       vi.green.offset   = 16;
@@ -100,7 +118,9 @@ static int get_framebuffer(GGLSurface *fb)
       vi.blue.length    = 8;
       vi.transp.offset  = 0;
       vi.transp.length  = 8;
-    } else { /* RGB565*/
+    }
+    else /* RGB565*/
+    {
       vi.red.offset     = 11;
       vi.red.length     = 5;
       vi.green.offset   = 5;
@@ -110,20 +130,24 @@ static int get_framebuffer(GGLSurface *fb)
       vi.transp.offset  = 0;
       vi.transp.length  = 0;
     }
-    if (ioctl(fd, FBIOPUT_VSCREENINFO, &vi) < 0) {
+
+    if (ioctl(fd, FBIOPUT_VSCREENINFO, &vi) < 0)
+    {
         perror("failed to put fb0 info");
         close(fd);
         return -1;
     }
 
-    if (ioctl(fd, FBIOGET_FSCREENINFO, &fi) < 0) {
+    if (ioctl(fd, FBIOGET_FSCREENINFO, &fi) < 0)
+    {
         perror("failed to get fb0 info");
         close(fd);
         return -1;
     }
 
     bits = mmap(0, fi.smem_len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (bits == MAP_FAILED) {
+    if (bits == MAP_FAILED)
+    {
         perror("failed to mmap framebuffer");
         close(fd);
         return -1;
@@ -150,7 +174,8 @@ static int get_framebuffer(GGLSurface *fb)
     return fd;
 }
 
-static void get_memory_surface(GGLSurface* ms) {
+static void get_memory_surface(GGLSurface* ms)
+{
   ms->version = sizeof(*ms);
   ms->width = vi.xres;
   ms->height = vi.yres;
@@ -161,13 +186,13 @@ static void get_memory_surface(GGLSurface* ms) {
 
 static void set_active_framebuffer(unsigned n)
 {
-    if (n > 1) return;
+    if (n > 1)
+        return;
     vi.yres_virtual = vi.yres * PIXEL_SIZE;
     vi.yoffset = n * vi.yres;
     vi.bits_per_pixel = PIXEL_SIZE * 8;
-    if (ioctl(gr_fb_fd, FBIOPUT_VSCREENINFO, &vi) < 0) {
+    if (ioctl(gr_fb_fd, FBIOPUT_VSCREENINFO, &vi) < 0)
         perror("active fb swap failed");
-    }
 }
 
 void gr_flip(void)
@@ -225,7 +250,8 @@ int gr_text(int x, int y, const char *s)
     while((off = *s++)) 
     {
         off -= 32;
-        if (off < 96) {
+        if (off < 96)
+        {
             gl->texCoord2i(gl, (off * font->cwidth) - x, 0 - y);
             gl->recti(gl, x, y, x + font->cwidth, y + font->cheight);
         }
@@ -283,10 +309,11 @@ void gr_clear()
     gr_fill(0,0, gr_fb_width(), gr_fb_height());
 }
 
-void gr_blit(gr_surface source, int sx, int sy, int w, int h, int dx, int dy) {
-    if (gr_context == NULL) {
+void gr_blit(gr_surface source, int sx, int sy, int w, int h, int dx, int dy)
+{
+    if (gr_context == NULL)
         return;
-    }
+
     GGLContext *gl = gr_context;
 
     gl->bindTexture(gl, (GGLSurface*) source);
@@ -298,26 +325,28 @@ void gr_blit(gr_surface source, int sx, int sy, int w, int h, int dx, int dy) {
     gl->recti(gl, dx, dy, dx + w, dy + h);
 }
 
-unsigned int gr_get_width(gr_surface surface) {
-    if (surface == NULL) {
+unsigned int gr_get_width(gr_surface surface)
+{
+    if (surface == NULL)
         return 0;
-    }
+
     return ((GGLSurface*) surface)->width;
 }
 
-unsigned int gr_get_height(gr_surface surface) {
-    if (surface == NULL) {
+unsigned int gr_get_height(gr_surface surface)
+{
+    if (surface == NULL)
         return 0;
-    }
+
     return ((GGLSurface*) surface)->height;
 }
 
 static void gr_init_font(void)
 {
-    GGLSurface *ftex, *ftex_l;
-    unsigned char *bits, *bits_l, *load_data, *rle;
-    unsigned char *in, data;
+    GGLSurface *ftex, *ftex_l, *font_surf = NULL;
+    unsigned char *bits, *bits_l;
     unsigned int i, j;
+    int ret;
 
     gr_font = calloc(sizeof(*gr_font), 1);
     ftex = &gr_font->texture;
@@ -341,12 +370,32 @@ static void gr_init_font(void)
     ftex_l->data = (void*) bits_l;
     ftex_l->format = GGL_PIXEL_FORMAT_A_8;
 
-    in = font.rundata;
-    load_data = bits;
-    while((data = *in++)) {
-        memset(load_data, (data & 0x80) ? 255 : 0, data & 0x7f);
-        load_data += (data & 0x7f);
+    /* read the font.png */
+    ret = res_create_surface(font.resource, (gr_surface *)&font_surf);
+    if (ret < 0)
+    {
+        fprintf(stderr, "failed loading font.png, return value = %d\n", ret);
+        return;
     }
+
+    if (font_surf->width != font.width || font_surf->height != font.height)
+    {
+        fprintf(stderr, "font.png - invalid size (%dx%d vs. %dx%d)\n",
+                font_surf->width, font_surf->height, font.width, font.height);
+        res_free_surface((gr_surface *)font_surf);
+        return;
+    }
+
+    if (font_surf->format != GGL_PIXEL_FORMAT_L_8)
+    {
+        fprintf(stderr, "font.png - invalid format (%d vs %d)\n", font_surf->format, GGL_PIXEL_FORMAT_L_8);
+        res_free_surface((gr_surface *)font_surf);
+        return;
+    }
+
+    /* Copy and release it */
+    memcpy(bits, font_surf->data, font.width * font.height);
+    res_free_surface((gr_surface *)font_surf);
 
     for (i = 0; i < font.height; i++)
         for (j = 0; j < font.width; j++)
@@ -368,10 +417,13 @@ int gr_init(void)
 
     gr_init_font();
     gr_vt_fd = open("/dev/tty0", O_RDWR | O_SYNC);
-    if (gr_vt_fd < 0) {
+    if (gr_vt_fd < 0)
+    {
         // This is non-fatal; post-Cupcake kernels don't have tty0.
         perror("can't open /dev/tty0");
-    } else if (ioctl(gr_vt_fd, KDSETMODE, (void*) KD_GRAPHICS)) {
+    }
+    else if (ioctl(gr_vt_fd, KDSETMODE, (void*) KD_GRAPHICS))
+    {
         // However, if we do open tty0, we expect the ioctl to work.
         perror("failed KDSETMODE to KD_GRAPHICS on tty0");
         gr_exit();
