@@ -22,6 +22,7 @@
 #include <sys/mman.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <cutils/properties.h>
 
 #include "common.h"
 #include "install.h"
@@ -29,6 +30,7 @@
 #include "minui/minui.h"
 #include "minzip/SysUtil.h"
 #include "minzip/Zip.h"
+#include "sideloader/adb.h"
 #include "interactive/interactive.h"
 #include "roots.h"
 #include "ui.h"
@@ -36,7 +38,9 @@
 #define ASSUMED_UPDATE_BINARY_NAME  "META-INF/com/google/android/update-binary"
 #define DEFAULT_UPDATE_BINARY_NAME  "/sbin/updater"
 
-static const char *SIDELOAD_TEMP_DIR = "/tmp/sideload";
+#define SIDELOADER_BINARY_NAME      "/sbin/sideloader"
+
+static const char *SIDELOAD_TEMP_DIR = "/tmp";
 static const char *EXTERNAL_SDCARD_ROOT = "/mnt/external_sdcard";
 
 static volatile interactive_struct* interactive;
@@ -317,8 +321,11 @@ int run_shell_script(const char *command, int stdout_to_ui, int blink_led, char*
 						interactive->in_trigger = 0;
 						interactive->out_trigger = chosen_item + 1;
 						break;
-						
+
 					case INTERACTIVE_TRIGGER_TEXT:
+
+						if (!get_current_device()->has_qwerty)
+							goto default_case;
 
 						if (blink_led)
 							ui_led_toggle(0);
@@ -334,6 +341,7 @@ int run_shell_script(const char *command, int stdout_to_ui, int blink_led, char*
 						break;
 					
 					default:
+default_case:
 						LOGE("Interactive input - invalid switch %d.\n", interactive->in_trigger);
 						interactive->header[0] = '\0';
 						interactive->items[0][0] = '\0';
@@ -558,6 +566,89 @@ static char* copy_package(const char* original_path)
 	return strdup(copy_path);
 }
 
+static void* adb_sideload_thread(void* v)
+{
+	pid_t sideloader = *((pid_t*)v);
+
+	int status;
+	waitpid(sideloader , &status, 0);
+	LOGI("sideload process finished\n");
+    
+	ui_cancel_wait_key();
+
+	if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+		ui_print("Sideload status %d\n", WEXITSTATUS(status));
+
+	LOGI("sideload thread finished\n");
+	return NULL;
+}
+
+int sideload_package(const char* install_file)
+{
+	pid_t sideloader;
+	pthread_t sideload_thread;
+
+	// Stop adbd
+	property_set("ctl.stop", "adbd");
+	ui_print("Starting sideload...\n");
+
+	sideloader = fork();
+
+	if (sideloader == 0)
+	{
+		execl(SIDELOADER_BINARY_NAME, SIDELOADER_BINARY_NAME, NULL);
+		exit(-1);
+	}
+
+	pthread_create(&sideload_thread, NULL, &adb_sideload_thread, &sideloader);
+
+	const char* sideload_headers[] = { "ADB Sideload",
+	                                   "",
+	                                   NULL
+	                                 };
+	const char* sideload_items[] = { "Cancel",
+	                                  NULL,
+                                      };
+
+	int result = get_interactive_menu(sideload_headers, sideload_items, 1);
+
+	// Kill child
+	kill(sideloader, SIGTERM);
+	pthread_join(sideload_thread, NULL);
+	ui_clear_key_queue();
+
+	struct stat st;
+	int ret;
+
+	if (result < 0)
+	{
+		if (stat(ADB_SIDELOAD_FILENAME, &st) != 0)
+		{
+			if (errno == ENOENT)
+				ui_print("No package received.\n");
+        		else
+				ui_print("Error reading package:\n  %s\n", strerror(errno));
+
+			ret =  INSTALL_ERROR;
+		}
+		else
+		{
+			int wipe_cache = 0;
+			ret = install_package(ADB_SIDELOAD_FILENAME, &wipe_cache, install_file);
+		}
+	}
+	else
+	{
+		ui_print("Sideload cancelled.\n");
+		ret = INSTALL_ERROR;
+	}
+
+	unlink(ADB_SIDELOAD_FILENAME);
+	//start adbd
+	property_set("ctl.start", "adbd");
+	return ret;
+}
+
 int install_package(const char* path, int* wipe_cache, const char* install_file)
 {
 	FILE* install_log = fopen_path(install_file, "w");
@@ -571,7 +662,7 @@ int install_package(const char* path, int* wipe_cache, const char* install_file)
 		LOGE("failed to open last_install: %s\n", strerror(errno));
 
 	//does it need to be copied to /tmp?
-	int requires_copy = strncmp(path, EXTERNAL_SDCARD_ROOT, strlen(EXTERNAL_SDCARD_ROOT)) && strncmp(path, "/cache", strlen("/cache"));
+	int requires_copy = strncmp(path, EXTERNAL_SDCARD_ROOT, strlen(EXTERNAL_SDCARD_ROOT)) && strncmp(path, "/cache", strlen("/cache")) && strncmp(path, "/tmp", strlen("/tmp"));
 	char* package_copy = NULL;
 
 	if (requires_copy)

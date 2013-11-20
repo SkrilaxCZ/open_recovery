@@ -31,12 +31,12 @@ LOCAL_STATIC_LIBRARIES :=
 
 LOCAL_MODULE_TAGS := eng
 
-LOCAL_STATIC_LIBRARIES += libext4_utils libz
+LOCAL_STATIC_LIBRARIES += libmake_f2fs libext4_utils libz
 LOCAL_STATIC_LIBRARIES += libminzip libunz libmincrypt
 LOCAL_STATIC_LIBRARIES += libminui libpixelflinger_static libpng libcutils
 LOCAL_STATIC_LIBRARIES += libstdc++ libc
 
-LOCAL_C_INCLUDES += system/extras/ext4_utils
+LOCAL_C_INCLUDES += external/f2fs-tools/include system/extras/ext4_utils
 
 include $(BUILD_EXECUTABLE)
 
@@ -45,6 +45,7 @@ include $(commands_recovery_local_path)/minelf/Android.mk
 include $(commands_recovery_local_path)/minzip/Android.mk
 include $(commands_recovery_local_path)/tools/Android.mk
 include $(commands_recovery_local_path)/edify/Android.mk
+include $(commands_recovery_local_path)/sideloader/Android.mk
 include $(commands_recovery_local_path)/updater/Android.mk
 include $(commands_recovery_local_path)/applypatch/Android.mk
 include $(commands_recovery_local_path)/interactive/Android.mk

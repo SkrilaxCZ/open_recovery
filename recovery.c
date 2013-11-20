@@ -58,6 +58,7 @@
 #define ITEM_APPLY_SDCARD_DIR  9
 #define ITEM_SHELL_SCRIPT_DIR  10
 #define ITEM_POWEROFF          11
+#define ITEM_SIDELOAD          12
 
 #define ITEM_NAME_REBOOT            "reboot"
 #define ITEM_NAME_APPLY_SDCARD      "update"
@@ -73,6 +74,7 @@
 #define ITEM_NAME_APPLY_SDCARD_DIR  "update_dir"
 #define ITEM_NAME_SHELL_SCRIPT_DIR  "shell_dir"
 #define ITEM_NAME_POWEROFF          "poweroff"
+#define ITEM_NAME_SIDELOAD          "sideload"
 
 //common
 #define CUSTOM_SHELL_SCRIPT_PATH    "/bin"
@@ -83,6 +85,8 @@
 #define BATTERY_CURRENT_CHARGE_FILE "/sys/class/power_supply/battery/capacity"
 #define BATTERY_CHARGING_STATE_FILE "/sys/class/power_supply/battery/status"
 
+#define DEVICE_INFO_PROP            "ro.product.model"
+
 static const struct option OPTIONS[] = {
   { "send_intent", required_argument, NULL, 's' },
   { "update_package", required_argument, NULL, 'u' },
@@ -91,6 +95,50 @@ static const struct option OPTIONS[] = {
   { "show_text", no_argument, NULL, 't' },
   { NULL, 0, NULL, 0 },
 };
+
+static DeviceInfo DEVICE_INFO[] = {
+{
+	.model = "XT897",
+	.name = "Motorola Photon Q",
+	.navigation = "Use arrow keys to highlight; enter to select.",
+	.has_led = 1,
+	.has_qwerty = 1,
+	.has_camera_key = 1,
+	.has_external_sdcard = 1,
+	.lcd_backlight_on_string = "255\n",
+},
+{
+	.model = "XT1080",
+	.name = "Motorola Droid MAXX",
+	.navigation = "Use volume keys to highlight; power to select.",
+	.has_led = 0,
+	.has_qwerty = 0,
+	.has_camera_key = 0,
+	.has_external_sdcard = 0,
+	.lcd_backlight_on_string = "127\n",
+},
+{
+	.model = "XT1060",
+	.name = "Motorola X",
+	.navigation = "Use volume keys to highlight; power to select.",
+	.has_led = 0,
+	.has_qwerty = 0,
+	.has_camera_key = 0,
+	.has_external_sdcard = 0,
+	.lcd_backlight_on_string = "127\n",
+},
+{
+	.model = "",
+},
+
+};
+
+static DeviceInfo* current_device = NULL;
+
+const DeviceInfo* get_current_device()
+{
+	return current_device;
+}
 
 static const char *COMMAND_FILE = "/cache/recovery/command";
 static const char *INTENT_FILE = "/cache/recovery/intent";
@@ -103,11 +151,11 @@ static const char *TEMPORARY_INSTALL_FILE = "/tmp/last_install";
 
 static const char* BASE_MENU_TITLE[] = 
 {
-	OPEN_RECOVERY_NAME" Open Recovery",
+	"", /* Recovery name + " Open Recovery" */
 	OPEN_RECOVERY_VERSION,
 	"Created by Skrilax_CZ",
 	"",
-	OPEN_RECOVERY_NAVIG,
+	"", /* Navigation */
 	"",
 	NULL 
 };
@@ -526,6 +574,20 @@ static int get_menu_selection(const char** headers, const char** items, unsigned
 		
 		int key = ui_wait_key();
 		
+		// Check cancel
+		if (key == -2)
+		{
+			pthread_mutex_lock(&screen_off_timer_mutex);
+			if (screen_off_timer == SCREEN_TIMEOUT_SCREEN_OFF)
+				ui_screen_on();
+
+			// Deactiavte it
+			screen_off_timer = SCREEN_TIMEOUT_TIMER_OFF;
+			pthread_mutex_unlock(&screen_off_timer_mutex);
+			chosen_item = -1;
+			break;
+		}
+
 		if (key < 0)
 		{
 			key_timeout = 1;
@@ -934,7 +996,6 @@ static void wipe_data(int confirm)
 		};
 		
 		int chosen_item = get_interactive_menu(headers, items, 1);
-		hide_menu_selection();
 		if (chosen_item != 7) 
 			return;
 		
@@ -1265,6 +1326,8 @@ static int select_action(int which)
 		return ITEM_SHELL_SCRIPT_DIR;
 	else if(!strcmp(MENU_ITEMS_ACTION[which], ITEM_NAME_POWEROFF))
 		return ITEM_POWEROFF;
+	else if(!strcmp(MENU_ITEMS_ACTION[which], ITEM_NAME_SIDELOAD))
+		return ITEM_SIDELOAD;
 	else 
 		return ITEM_ERROR;
 }
@@ -1293,6 +1356,9 @@ static void prompt_and_wait()
 	{		
 		int menu_item;
 		
+		// Make sure we're mounted before doing anything
+		ensure_common_roots_mounted();
+
 		if (override_initial_selection != -1)
 		{
 			menu_item = get_menu_selection(headers, (const char**)MENU_ITEMS, MENU_ITEMS_SELECTABLE, title_length, override_initial_selection, 0);
@@ -1310,9 +1376,6 @@ static void prompt_and_wait()
 			hide_menu_selection();
 		
 		fprintf(stderr, "Menu: %d, %d, %s\n", menu_item, chosen_item, MENU_ITEMS_TARGET[menu_item]);
-
-		// Make sure we're mounted before doing anything
-		ensure_common_roots_mounted();
 
 		switch (chosen_item) 
 		{
@@ -1379,8 +1442,8 @@ static void prompt_and_wait()
 						} 
 						else if (!ui_text_visible())
 							return;  // reboot if logs aren't visible
-							else 
-								ui_print("\nInstall from sdcard complete.\n");
+						else 
+							ui_print("\nInstall from sdcard complete.\n");
 							
 					}
 				}
@@ -1397,6 +1460,27 @@ static void prompt_and_wait()
 				override_initial_selection = menu_item;
 				break;
 			}
+
+			case ITEM_SIDELOAD:
+			{
+				ui_print("\n-- Install from sideload...\n");
+				int status = sideload_package(TEMPORARY_INSTALL_FILE);
+				if (status != INSTALL_SUCCESS) 
+				{
+					ui_set_background(BACKGROUND_ICON_ERROR);
+					ui_print("Installation aborted.\n");
+				} 
+				else 
+					ui_print("\nInstall from sideload complete.\n");
+
+				create_menu(menu_files[menu_level], menu_scripts[menu_level]);
+				free(headers);
+				headers = prepend_title((const char**)MENU_HEADERS, &title_length);
+
+				override_initial_selection = menu_item;
+				break;
+			}
+			
 				
 			case ITEM_SHELL_SCRIPT:
 			{
@@ -1617,6 +1701,38 @@ int main(int argc, char **argv)
 	freopen(TEMPORARY_LOG_FILE, "a", stderr); setbuf(stderr, NULL);
 	printf("Starting Open Recovery on %s", ctime(&start));
 
+	//select device
+	char device_prop[81];
+	char top_menu_item[81];
+
+	property_get(DEVICE_INFO_PROP, device_prop, "");
+
+	if (device_prop[0] == '\0')
+	{
+		printf("No device specified, aborting...\n");
+		return EXIT_FAILURE;
+	}
+
+	int i = 0;
+	while (true)
+	{
+		if (DEVICE_INFO[i].model[0] == '\0')
+		{
+			printf("Device %s is not supported, aborting...\n", device_prop);
+			return EXIT_FAILURE;
+		}
+
+		if (!strcmp(device_prop, DEVICE_INFO[i].model))
+		{
+			current_device = &(DEVICE_INFO[i]);
+			sprintf(top_menu_item, "%s Open Recovery", DEVICE_INFO[i].name);
+			BASE_MENU_TITLE[0] = (const char*)strdup(top_menu_item);
+			BASE_MENU_TITLE[4] = DEVICE_INFO[i].navigation;
+			break;
+		}
+		i++;
+	}
+
 	//menu title
 	//keep'em malloced even if empty :p
 	char* mod_author = malloc(81);
@@ -1713,8 +1829,8 @@ int main(int argc, char **argv)
 				break;
 				
 			case '?':
-					LOGE("Invalid command argument\n");
-					continue;
+				LOGE("Invalid command argument\n");
+				continue;
 		}
 	}
 

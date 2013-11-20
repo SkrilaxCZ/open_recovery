@@ -26,6 +26,7 @@
 #include "roots.h"
 #include "common.h"
 #include "make_ext4fs.h"
+#include "f2fs_fs.h"
 #include "ui.h"
 #include "install.h"
 
@@ -191,7 +192,7 @@ int ensure_path_mounted(const char* path)
 
 	mkdir(v->mount_point, 0755);  // in case it doesn't already exist
 
-	if (strcmp(v->fs_type, "ext4") == 0 || strcmp(v->fs_type, "vfat") == 0) 
+	if (strcmp(v->fs_type, "ext4") == 0 || strcmp(v->fs_type, "vfat") == 0 || strcmp(v->fs_type, "f2fs") == 0) 
 	{
 		result = mount(v->device, v->mount_point, v->fs_type, MS_NOATIME | MS_NODEV | MS_NODIRATIME, "");
 		if (result == 0) 
@@ -223,11 +224,11 @@ static int device_node_exists(const char *path)
 	}
 
 	struct stat stFileInfo;
-  int sts;
+	int sts;
 
-  // Attempt to get the file attributes
-  sts = stat(v->device, &stFileInfo);
-  if(sts == 0)
+	// Attempt to get the file attributes
+	sts = stat(v->device, &stFileInfo);
+	if(sts == 0)
 		return 1;
 
 	if (v->device2)
@@ -247,7 +248,7 @@ void ensure_common_roots_mounted()
 	ensure_path_mounted("/cache");
 	ensure_path_mounted("/data");
 
-	if (device_node_exists("/mnt/external_sdcard"))
+	if (get_current_device()->has_external_sdcard && device_node_exists("/mnt/external_sdcard"))
 		ensure_path_mounted("/mnt/external_sdcard");
 }
 
@@ -257,7 +258,7 @@ void ensure_common_roots_unmounted()
 	ensure_path_unmounted("/cache");
 	ensure_path_unmounted("/data");
 
-	if (device_node_exists("/mnt/external_sdcard"))
+	if (get_current_device()->has_external_sdcard && device_node_exists("/mnt/external_sdcard"))
 		ensure_path_unmounted("/mnt/external_sdcard");
 }
 
@@ -342,6 +343,19 @@ int format_volume(const char* volume)
 		if (result != 0) 
 		{
 			LOGE("format_volume: make_extf4fs failed on %s\n", v->device);
+			return -1;
+		}
+		return 0;
+	}
+
+	if (strcmp(v->fs_type, "f2fs") == 0) 
+	{
+		const char* args[] = { "mkfs.f2fs", v->device };
+
+		int result = make_f2fs_main(2, (char**)args);
+		if (result != 0) 
+		{
+			LOGE("format_volume: make_f2fs failed on %s\n", v->device);
 			return -1;
 		}
 		return 0;

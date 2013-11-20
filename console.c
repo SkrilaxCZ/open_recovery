@@ -881,7 +881,8 @@ int run_console(const char* command)
 	ioctl(childfd, TIOCSWINSZ, &sz);
 
 	ui_console_set_system_front_color(CONSOLE_HEADER_COLOR);
-	ui_console_print("Motorola " OPEN_RECOVERY_NAME "\r\n");
+	ui_console_print(get_current_device()->name);
+	ui_console_print("\r\n");
 	ui_console_print("Open Recovery " OPEN_RECOVERY_VERSION_NUMBER " Console\r\n");
 
 	ui_console_set_system_front_color(CONSOLE_DEFAULT_FRONT_COLOR);

@@ -131,6 +131,8 @@ static pthread_cond_t led_cond = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t led_mutex = PTHREAD_MUTEX_INITIALIZER;
 static volatile unsigned int led_sts;
 
+static bool screen_on;
+
 // Interactive user input
 #define USER_INPUT_TEXT_MAX 32
 
@@ -267,7 +269,11 @@ static void draw_user_input_locked()
 extern void draw_console_locked();
 
 static void draw_screen_locked()
-{	
+{
+	// Do nothing if screen is off
+	if (!screen_on)
+		return;
+
 	switch (current_view_mode)
 	{
 		case VIEWMODE_NORMAL:
@@ -522,6 +528,9 @@ static void* progress_thread(void *cookie)
 
 void ui_led_toggle(int state)
 {
+	if (!get_current_device()->has_led)
+		return;
+
 	pthread_mutex_lock(&led_mutex);
 
 	if(state)
@@ -535,6 +544,9 @@ void ui_led_toggle(int state)
 
 void ui_led_blink(int continuously)
 {
+	if (!get_current_device()->has_led)
+		return;
+
 	pthread_mutex_lock(&led_mutex);
 
 	if(continuously)
@@ -543,12 +555,14 @@ void ui_led_blink(int continuously)
 		led_sts = LED_BLINK_ONCE;
 
 	pthread_cond_signal(&led_cond); 
-	pthread_mutex_unlock(&led_mutex);
-  
+	pthread_mutex_unlock(&led_mutex);  
 }
 
 static void led_on(FILE* ledfp_r, FILE* ledfp_g, FILE* ledfp_b)
 {
+	if (!get_current_device()->has_led)
+		return;
+
 	char buffer[20];
 
 	sprintf(buffer, "%d\n", led_color.r);
@@ -567,6 +581,9 @@ static void led_on(FILE* ledfp_r, FILE* ledfp_g, FILE* ledfp_b)
 
 static void led_off(FILE* ledfp_r, FILE* ledfp_g, FILE* ledfp_b)
 {
+	if (!get_current_device()->has_led)
+		return;
+
 	fwrite("0\n", 1, strlen("0\n"), ledfp_r);
 	fwrite("0\n", 1, strlen("0\n"), ledfp_g);
 	fwrite("0\n", 1, strlen("0\n"), ledfp_b);
@@ -727,6 +744,16 @@ static void* input_thread(void* cookie)
 	return NULL;
 }
 
+// cancel wait key
+void ui_cancel_wait_key()
+{
+	pthread_mutex_lock(&key_queue_mutex);
+	key_queue[key_queue_len] = -2;
+	key_queue_len++;
+	pthread_cond_signal(&key_queue_cond);
+	pthread_mutex_unlock(&key_queue_mutex);
+}
+
 // Sends events for long pressed keys. Ticks every 50ms to check
 static void* kbd_thread(void* cookie)
 {
@@ -777,21 +804,32 @@ void ui_screen_on()
 {
 	FILE* ledfd;
 	FILE* govfd;
-	
-	// LCD
-	ledfd = fopen(LCD_BACKLIGHT_FILE, "w");
-	fwrite("255\n", 1, strlen("255\n"), ledfd);
-	fclose(ledfd);
-
-	// Keyboard
-	ledfd = fopen(KEYBOARD_BACKLIGHT_FILE, "w");
-	fwrite("255\n", 1, strlen("255\n"), ledfd);
-	fclose(ledfd);
+	const char* bkg_on;
 
 	// Governor
 	govfd = fopen(GOVERNOR_FILE, "w");
 	fwrite("performance\n", 1, strlen("performance\n"), govfd);
 	fclose(govfd);
+
+	// Screen
+	pthread_mutex_lock(&ui_update_mutex);
+	screen_on = true;
+	update_screen_locked();
+	pthread_mutex_unlock(&ui_update_mutex);
+
+	// LCD
+	ledfd = fopen(LCD_BACKLIGHT_FILE, "w");
+	bkg_on = get_current_device()->lcd_backlight_on_string;
+	fwrite(bkg_on, 1, strlen(bkg_on), ledfd);
+	fclose(ledfd);
+
+	// Keyboard
+	if (get_current_device()->has_qwerty)
+	{
+		ledfd = fopen(KEYBOARD_BACKLIGHT_FILE, "w");
+		fwrite("255\n", 1, strlen("255\n"), ledfd);
+		fclose(ledfd);
+	}
 }
 
 void ui_screen_off()
@@ -805,9 +843,19 @@ void ui_screen_off()
 	fclose(ledfd);
 
 	// Keyboard
-	ledfd = fopen(KEYBOARD_BACKLIGHT_FILE, "w");
-	fwrite("0\n", 1, strlen("0\n"), ledfd);
-	fclose(ledfd);
+	if (get_current_device()->has_qwerty)
+	{
+		ledfd = fopen(KEYBOARD_BACKLIGHT_FILE, "w");
+		fwrite("0\n", 1, strlen("0\n"), ledfd);
+		fclose(ledfd);
+	}
+
+	// Screen
+	pthread_mutex_lock(&ui_update_mutex);
+	screen_on = false;
+	gr_clear();
+	update_screen_locked();
+	pthread_mutex_unlock(&ui_update_mutex);
 
 	// Governor
 	govfd = fopen(GOVERNOR_FILE, "w");
@@ -890,7 +938,9 @@ void ui_init()
 	pthread_create(&t, NULL, progress_thread, NULL);
 	pthread_create(&t, NULL, input_thread, NULL);
 	pthread_create(&t, NULL, kbd_thread, NULL);
-	pthread_create(&t, NULL, led_thread, NULL);
+
+	if (get_current_device()->has_led)
+		pthread_create(&t, NULL, led_thread, NULL);
 }
 
 void ui_set_background(int icon)

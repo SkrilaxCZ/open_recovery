@@ -153,6 +153,9 @@ void update_progress_locked();
 //battery
 void ui_set_battery_data(int battery_charge, int battery_charging);
 
+//cancel key
+void ui_cancel_wait_key();
+
 //screen on/off
 void ui_screen_on();
 void ui_screen_off();

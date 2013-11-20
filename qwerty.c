@@ -58,6 +58,10 @@ int get_capslock_state()
 void toggle_capslock_state()
 {
 	capslock_on = !capslock_on;
+
+	if (!get_current_device()->has_qwerty)
+		return;
+
 	if (capslock_led != NULL)
 	{
 		if (capslock_on)
@@ -67,10 +71,16 @@ void toggle_capslock_state()
 
 		fflush(capslock_led);
 	}
+
 }
 
 void init_keypad_layout()
 {
+	// do we have qwerty
+	if (!get_current_device()->has_qwerty)
+		return;
+
+
 	//clear it 
 	
 	memset(qwerty_layout.normal, 0, KEY_MAX+1);
@@ -296,6 +306,11 @@ int menu_handle_key(int key_code, int visible)
 			case KEY_CAMERA:
 			case KEY_ENTER:
 				return SELECT_ITEM;
+
+			case KEY_POWER:
+				if (!get_current_device()->has_camera_key)
+					return SELECT_ITEM;
+				break;
 		}
 	}
 

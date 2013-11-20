@@ -20,12 +20,32 @@
 #include <stdio.h>
 
 //Open Recovery Version
-#define OPEN_RECOVERY_VERSION_NUMBER "2.07"
+#define OPEN_RECOVERY_VERSION_NUMBER "2.08"
 #define OPEN_RECOVERY_VERSION "Version "OPEN_RECOVERY_VERSION_NUMBER
 
-//Photon Q
-#define OPEN_RECOVERY_NAME "Motorola Photon Q"
-#define OPEN_RECOVERY_NAVIG "Use arrow keys to highlight; enter to select."
+typedef struct 
+{
+	// ro.product.model
+	const char* model;
+
+	// Name
+	const char* name;
+
+	// Navigation
+	const char* navigation;
+
+	// Capabilites
+	int has_led;
+	int has_qwerty;
+	int has_camera_key;
+	int has_external_sdcard;
+	
+	// LCD Backlight ON write string
+	const char* lcd_backlight_on_string;
+
+} DeviceInfo;
+
+const DeviceInfo* get_current_device();
 
 #define MOD_AUTHOR_PROP "ro.or.mod.author"
 #define MOD_VERSION_PROP "ro.or.mod.version"
