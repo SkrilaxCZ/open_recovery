@@ -1701,6 +1701,9 @@ int main(int argc, char **argv)
 	freopen(TEMPORARY_LOG_FILE, "a", stderr); setbuf(stderr, NULL);
 	printf("Starting Open Recovery on %s", ctime(&start));
 
+	// Set umask to S_IWGRP | S_IWOTH
+	umask(S_IWGRP | S_IWOTH);
+
 	//select device
 	char device_prop[81];
 	char top_menu_item[81];

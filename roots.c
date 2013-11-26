@@ -66,7 +66,14 @@ void load_volume_table()
 	device_volumes[0].device = NULL;
 	device_volumes[0].device2 = NULL;
 	device_volumes[0].length = 0;
-	num_volumes = 1;
+
+	device_volumes[1].mount_point = "/install";
+	device_volumes[1].fs_type = "ramdisk";
+	device_volumes[1].device = NULL;
+	device_volumes[1].device2 = NULL;
+	device_volumes[1].length = 0;
+
+	num_volumes = 2;
 
 	FILE* fstab = fopen("/etc/recovery.fstab", "r");
 	if (fstab == NULL) 
@@ -194,14 +201,15 @@ int ensure_path_mounted(const char* path)
 
 	if (strcmp(v->fs_type, "ext4") == 0 || strcmp(v->fs_type, "vfat") == 0 || strcmp(v->fs_type, "f2fs") == 0) 
 	{
-		result = mount(v->device, v->mount_point, v->fs_type, MS_NOATIME | MS_NODEV | MS_NODIRATIME, "");
+		const char* additional_data = strcmp(v->fs_type, "f2fs") == 0 ? "inline_xattr" : "";
+		result = mount(v->device, v->mount_point, v->fs_type, MS_NOATIME | MS_NODEV | MS_NODIRATIME, additional_data);
 		if (result == 0) 
 			return 0;
 
 		if (v->device2) 
 		{
 			LOGW("failed to mount %s (%s); trying %s\n", v->device, strerror(errno), v->device2);
-			result = mount(v->device2, v->mount_point, v->fs_type, MS_NOATIME | MS_NODEV | MS_NODIRATIME, "");
+			result = mount(v->device2, v->mount_point, v->fs_type, MS_NOATIME | MS_NODEV | MS_NODIRATIME, additional_data);
 			if (result == 0) 
 				return 0;
 		}

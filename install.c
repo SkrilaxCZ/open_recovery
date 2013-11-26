@@ -40,7 +40,7 @@
 
 #define SIDELOADER_BINARY_NAME      "/sbin/sideloader"
 
-static const char *SIDELOAD_TEMP_DIR = "/tmp";
+static const char *SIDELOAD_TEMP_DIR = "/install";
 static const char *EXTERNAL_SDCARD_ROOT = "/mnt/external_sdcard";
 
 static volatile interactive_struct* interactive;
