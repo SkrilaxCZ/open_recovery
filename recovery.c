@@ -103,8 +103,10 @@ static DeviceInfo DEVICE_INFO[] = {
 	.navigation = "Use arrow keys to highlight; enter to select.",
 	.has_led = 1,
 	.has_qwerty = 1,
+	.has_capslock_led = 1,
 	.has_camera_key = 1,
 	.has_external_sdcard = 1,
+	.lcd_backlight_file = "/sys/class/backlight/lcd-backlight/brightness",
 	.lcd_backlight_on_string = "255\n",
 },
 {
@@ -113,8 +115,10 @@ static DeviceInfo DEVICE_INFO[] = {
 	.navigation = "Use volume keys to highlight; power to select.",
 	.has_led = 0,
 	.has_qwerty = 0,
+	.has_capslock_led = 0,
 	.has_camera_key = 0,
 	.has_external_sdcard = 0,
+	.lcd_backlight_file = "/sys/class/backlight/lcd-backlight/brightness",
 	.lcd_backlight_on_string = "127\n",
 },
 {
@@ -123,9 +127,23 @@ static DeviceInfo DEVICE_INFO[] = {
 	.navigation = "Use volume keys to highlight; power to select.",
 	.has_led = 0,
 	.has_qwerty = 0,
+	.has_capslock_led = 0,
 	.has_camera_key = 0,
 	.has_external_sdcard = 0,
+	.lcd_backlight_file = "/sys/class/backlight/lcd-backlight/brightness",
 	.lcd_backlight_on_string = "127\n",
+},
+{
+	.model = "A953",
+	.name = "Motorola Milestone 2",
+	.navigation = "Use arrow keys to highlight; enter to select.",
+	.has_led = 1,
+	.has_qwerty = 1,
+	.has_capslock_led = 0,
+	.has_camera_key = 1,
+	.has_external_sdcard = 1,
+	.lcd_backlight_file = "/sys/class/leds/lcd-backlight/brightness",
+	.lcd_backlight_on_string = "255\n",
 },
 {
 	.model = "",
@@ -1789,7 +1807,7 @@ int main(int argc, char **argv)
 	load_properties();
 	load_volume_table();
 	init_keypad_layout();
-	ui_init();	
+	ui_init();
 	
 	pthread_t t;
 	pthread_create(&t, NULL, battery_thread, NULL);

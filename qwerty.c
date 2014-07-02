@@ -48,6 +48,8 @@
 static int capslock_on = 0;
 static FILE* capslock_led = NULL;
 
+static int altlock_on = 0;
+
 keyboard_layout qwerty_layout;
 
 int get_capslock_state()
@@ -59,7 +61,7 @@ void toggle_capslock_state()
 {
 	capslock_on = !capslock_on;
 
-	if (!get_current_device()->has_qwerty)
+	if (!get_current_device()->has_capslock_led)
 		return;
 
 	if (capslock_led != NULL)
@@ -74,20 +76,18 @@ void toggle_capslock_state()
 
 }
 
-void init_keypad_layout()
+int get_altlock_state()
 {
-	// do we have qwerty
-	if (!get_current_device()->has_qwerty)
-		return;
+	return altlock_on;
+}
 
+void toggle_altlock_state()
+{
+	altlock_on = !altlock_on;
+}
 
-	//clear it 
-	
-	memset(qwerty_layout.normal, 0, KEY_MAX+1);
-	memset(qwerty_layout.shifted, 0, KEY_MAX+1);
-
-	//characters
-	
+void xt897_characters_init()
+{
 	qwerty_layout.normal[KEY_A] = 'a';
 	qwerty_layout.shifted[KEY_A] = 'A';
 
@@ -162,7 +162,6 @@ void init_keypad_layout()
 
 	qwerty_layout.normal[KEY_Y] = 'y';
 	qwerty_layout.shifted[KEY_Y] = 'Y';
-
 
 	qwerty_layout.normal[KEY_Z] = 'z';
 	qwerty_layout.shifted[KEY_Z] = 'Z';
@@ -270,8 +269,240 @@ void init_keypad_layout()
 
 	qwerty_layout.normal[KEY_HP] = CHAR_NOTHING;
 	qwerty_layout.shifted[KEY_HP] = CHAR_NOTHING;
+}
+
+void a953_characters_init()
+{
+	qwerty_layout.normal[KEY_A] = 'a';
+	qwerty_layout.shifted[KEY_A] = 'A';
+	qwerty_layout.alternate[KEY_A] = '!';
+
+	qwerty_layout.normal[KEY_B] = 'b';
+	qwerty_layout.shifted[KEY_B] = 'B';
+	qwerty_layout.alternate[KEY_B] = '+';
+
+	qwerty_layout.normal[KEY_C] = 'c';
+	qwerty_layout.shifted[KEY_C] = 'C';
+	qwerty_layout.alternate[KEY_C] = '_';
+
+	qwerty_layout.normal[KEY_D] = 'd';
+	qwerty_layout.shifted[KEY_D] = 'D';
+	qwerty_layout.alternate[KEY_D] = '|';
+
+	qwerty_layout.normal[KEY_E] = 'e';
+	qwerty_layout.shifted[KEY_E] = 'E';
+	qwerty_layout.alternate[KEY_E] = '3';
+
+	qwerty_layout.normal[KEY_F] = 'f';
+	qwerty_layout.shifted[KEY_F] = 'F';
+	qwerty_layout.alternate[KEY_F] = '%';
+
+	qwerty_layout.normal[KEY_G] = 'g';
+	qwerty_layout.shifted[KEY_G] = 'G';
+	qwerty_layout.alternate[KEY_G] = '=';
+
+	qwerty_layout.normal[KEY_H] = 'h';
+	qwerty_layout.shifted[KEY_H] = 'H';
+	qwerty_layout.alternate[KEY_H] = '&';
+
+	qwerty_layout.normal[KEY_I] = 'i';
+	qwerty_layout.shifted[KEY_I] = 'I';
+	qwerty_layout.alternate[KEY_I] = '8';
+
+	qwerty_layout.normal[KEY_J] = 'j';
+	qwerty_layout.shifted[KEY_J] = 'J';
+	qwerty_layout.alternate[KEY_J] = '*';
+
+	qwerty_layout.normal[KEY_K] = 'k';
+	qwerty_layout.shifted[KEY_K] = 'K';
+	qwerty_layout.alternate[KEY_K] = '(';
+
+	qwerty_layout.normal[KEY_L] = 'l';
+	qwerty_layout.shifted[KEY_L] = 'L';
+	qwerty_layout.alternate[KEY_L] = '}';
+
+	qwerty_layout.normal[KEY_M] = 'm';
+	qwerty_layout.shifted[KEY_M] = 'M';
+	qwerty_layout.alternate[KEY_M] = '.';
+
+	qwerty_layout.normal[KEY_N] = 'n';
+	qwerty_layout.shifted[KEY_N] = 'N';
+	qwerty_layout.alternate[KEY_N] = '"';
+
+	qwerty_layout.normal[KEY_O] = 'o';
+	qwerty_layout.shifted[KEY_O] = 'O';
+	qwerty_layout.alternate[KEY_O] = '9';
+
+	qwerty_layout.normal[KEY_P] = 'p';
+	qwerty_layout.shifted[KEY_P] = 'P';
+	qwerty_layout.alternate[KEY_P] = '0';
+
+	qwerty_layout.normal[KEY_Q] = 'q';
+	qwerty_layout.shifted[KEY_Q] = 'Q';
+	qwerty_layout.alternate[KEY_Q] = '1';
+
+	qwerty_layout.normal[KEY_R] = 'r';
+	qwerty_layout.shifted[KEY_R] = 'R';
+	qwerty_layout.alternate[KEY_R] = '4';
+
+	qwerty_layout.normal[KEY_S] = 's';
+	qwerty_layout.shifted[KEY_S] = 'S';
+	qwerty_layout.alternate[KEY_S] = '#';
+
+	qwerty_layout.normal[KEY_T] = 't';
+	qwerty_layout.shifted[KEY_T] = 'T';
+	qwerty_layout.alternate[KEY_T] = '5';
+
+	qwerty_layout.normal[KEY_U] = 'u';
+	qwerty_layout.shifted[KEY_U] = 'U';
+	qwerty_layout.alternate[KEY_U] = '7';
+
+	qwerty_layout.normal[KEY_V] = 'v';
+	qwerty_layout.shifted[KEY_V] = 'V';
+	qwerty_layout.alternate[KEY_V] = '-';
+
+	qwerty_layout.normal[KEY_W] = 'w';
+	qwerty_layout.shifted[KEY_W] = 'W';
+	qwerty_layout.alternate[KEY_W] = '2';
+
+	qwerty_layout.normal[KEY_X] = 'x';
+	qwerty_layout.shifted[KEY_X] = 'X';
+	qwerty_layout.alternate[KEY_X] = '>';
+
+	qwerty_layout.normal[KEY_Y] = 'y';
+	qwerty_layout.shifted[KEY_Y] = 'Y';
+	qwerty_layout.alternate[KEY_Y] = '6';
+
+	qwerty_layout.normal[KEY_Z] = 'z';
+	qwerty_layout.shifted[KEY_Z] = 'Z';
+	qwerty_layout.alternate[KEY_Z] = '<';
+
+	//symbols 
+
+	qwerty_layout.normal[KEY_DOT] = '.';
+	qwerty_layout.shifted[KEY_DOT] = '.';
+	qwerty_layout.alternate[KEY_DOT] = ':';
+
+	qwerty_layout.normal[KEY_COMMA] = ',';
+	qwerty_layout.shifted[KEY_COMMA] = ',';
+	qwerty_layout.alternate[KEY_COMMA] = ';';
+
+	qwerty_layout.normal[KEY_SLASH] = '/';
+	qwerty_layout.shifted[KEY_SLASH] = '\\';
+	qwerty_layout.alternate[KEY_SLASH] = '?';
+
+	qwerty_layout.normal[KEY_TAB] = '\t';
+	qwerty_layout.shifted[KEY_TAB] = '\t';
+	qwerty_layout.alternate[KEY_TAB] = '~';
+
+	qwerty_layout.normal[KEY_SPACE] = ' ';
+	qwerty_layout.shifted[KEY_SPACE] = ' ';
+	qwerty_layout.alternate[KEY_SPACE] = ' ';
+
+	qwerty_layout.normal[KEY_EMAIL] = '@';
+	qwerty_layout.shifted[KEY_EMAIL] = '$';
+	qwerty_layout.alternate[KEY_EMAIL] = '^';
+
+	qwerty_layout.normal[KEY_LEFTSHIFT] = CHAR_NOTHING;
+	qwerty_layout.shifted[KEY_LEFTSHIFT] = CHAR_NOTHING;
+	qwerty_layout.alternate[KEY_LEFTSHIFT] = CHAR_NOTHING;
+
+	qwerty_layout.normal[KEY_LEFTALT] = CHAR_NOTHING;
+	qwerty_layout.shifted[KEY_LEFTALT] = CHAR_NOTHING;
+	qwerty_layout.alternate[KEY_LEFTALT] = CHAR_NOTHING;
+
+	qwerty_layout.normal[KEY_LEFTMETA] = CHAR_KEY_ALTLOCK;
+	qwerty_layout.shifted[KEY_LEFTMETA] = CHAR_KEY_ALTLOCK;
+	qwerty_layout.alternate[KEY_LEFTMETA] = CHAR_KEY_ALTLOCK;
+
+	qwerty_layout.normal[KEY_REPLY] = CHAR_NOTHING;
+	qwerty_layout.shifted[KEY_REPLY] = CHAR_NOTHING;
+	qwerty_layout.alternate[KEY_REPLY] = CHAR_NOTHING;
+
+	qwerty_layout.normal[KEY_RECORD] = CHAR_NOTHING;
+	qwerty_layout.shifted[KEY_RECORD] = CHAR_NOTHING;
+	qwerty_layout.alternate[KEY_RECORD] = CHAR_NOTHING;
+
+	qwerty_layout.normal[KEY_SEARCH] = CHAR_NOTHING;
+	qwerty_layout.shifted[KEY_SEARCH] = CHAR_NOTHING;
+	qwerty_layout.alternate[KEY_SEARCH] = CHAR_NOTHING;
+
+	qwerty_layout.normal[KEY_LEFTSHIFT] = CHAR_NOTHING;
+	qwerty_layout.shifted[KEY_LEFTSHIFT] = CHAR_NOTHING;
+	qwerty_layout.alternate[KEY_LEFTSHIFT] = CHAR_NOTHING;
+
+	qwerty_layout.normal[KEY_BACK] = CHAR_KEY_ESCAPE;
+	qwerty_layout.shifted[KEY_BACK] = CHAR_KEY_ESCAPE;
+	qwerty_layout.alternate[KEY_BACK] = CHAR_KEY_ESCAPE;
+
+	qwerty_layout.normal[KEY_ENTER] = '\n';
+	qwerty_layout.shifted[KEY_ENTER] = '\n';
+	qwerty_layout.alternate[KEY_ENTER] = '\n';
+
+	qwerty_layout.normal[KEY_BACKSPACE] = '\b';
+	qwerty_layout.shifted[KEY_BACKSPACE] = '\b';
+	qwerty_layout.alternate[KEY_BACKSPACE] = '\b';
+
+	//arrow keys 
+
+	qwerty_layout.normal[KEY_UP] = CHAR_KEY_LEFT; 
+	qwerty_layout.shifted[KEY_UP] = CHAR_KEY_LEFT;
+	qwerty_layout.alternate[KEY_UP] = CHAR_KEY_LEFT;
+
+	qwerty_layout.normal[KEY_LEFT] = CHAR_KEY_DOWN;
+	qwerty_layout.shifted[KEY_LEFT] = CHAR_KEY_DOWN;
+	qwerty_layout.alternate[KEY_LEFT] = CHAR_KEY_DOWN;
+
+	qwerty_layout.normal[KEY_RIGHT] = CHAR_KEY_UP;
+	qwerty_layout.shifted[KEY_RIGHT] = CHAR_KEY_UP;
+	qwerty_layout.alternate[KEY_RIGHT] = CHAR_KEY_UP;
+
+	qwerty_layout.normal[KEY_DOWN] = CHAR_KEY_RIGHT;
+	qwerty_layout.shifted[KEY_DOWN] = CHAR_KEY_RIGHT;
+	qwerty_layout.alternate[KEY_DOWN] = CHAR_KEY_RIGHT;
+
+	//external keys 
+
+	qwerty_layout.normal[KEY_VOLUMEDOWN] = CHAR_SCROLL_DOWN;
+	qwerty_layout.shifted[KEY_VOLUMEDOWN] = CHAR_BIG_SCROLL_DOWN;
+	qwerty_layout.alternate[KEY_VOLUMEDOWN] = CHAR_BIG_SCROLL_DOWN;
+
+	qwerty_layout.normal[KEY_VOLUMEUP] = CHAR_SCROLL_UP;
+	qwerty_layout.shifted[KEY_VOLUMEUP] = CHAR_BIG_SCROLL_UP;
+	qwerty_layout.alternate[KEY_VOLUMEUP] = CHAR_BIG_SCROLL_UP;
+
+	qwerty_layout.normal[KEY_CAMERA] = CHAR_NOTHING;
+	qwerty_layout.shifted[KEY_CAMERA] = CHAR_NOTHING;
+	qwerty_layout.alternate[KEY_CAMERA] = CHAR_NOTHING;
+
+	qwerty_layout.normal[KEY_HP] = CHAR_NOTHING;
+	qwerty_layout.shifted[KEY_HP] = CHAR_NOTHING;
+	qwerty_layout.alternate[KEY_HP] = CHAR_NOTHING;
+}
+
+void init_keypad_layout()
+{
+	// do we have qwerty
+	if (!get_current_device()->has_qwerty)
+		return;
+
+	//clear it 
 	
+	memset(qwerty_layout.normal, 0, KEY_MAX+1);
+	memset(qwerty_layout.shifted, 0, KEY_MAX+1);
+	memset(qwerty_layout.alternate, 0, KEY_MAX+1);
+
+	// which layout
+	if (!strcmp(get_current_device()->model, "XT897"))
+		xt897_characters_init();
+	else if (!strcmp(get_current_device()->model, "A953"))
+		a953_characters_init();
+
 	//capslock LED
+
+	// do we have capslock LED
+	if (!get_current_device()->has_capslock_led)
+		return;
 
 	capslock_led = fopen(CAPSLOCK_BACKLIGHT_FILE, "w");
 	if (capslock_led == NULL)
@@ -283,9 +514,15 @@ void init_keypad_layout()
 	}
 }
 
-char resolve_keypad_character(int keycode, int shift)
+char resolve_keypad_character(int keycode, int shift, int alt)
 {
-	return shift ? qwerty_layout.shifted[keycode] : qwerty_layout.normal[keycode];
+	if (alt)
+		return qwerty_layout.alternate[keycode];
+	
+	if (shift)
+		return qwerty_layout.shifted[keycode];
+		
+	return qwerty_layout.normal[keycode];
 }
 
 int menu_handle_key(int key_code, int visible)

@@ -51,7 +51,6 @@
 #define LED_FILE_GREEN  "/sys/class/leds/green/brightness"
 #define LED_FILE_BLUE   "/sys/class/leds/blue/brightness"
 
-#define LCD_BACKLIGHT_FILE      "/sys/class/backlight/lcd-backlight/brightness"
 #define KEYBOARD_BACKLIGHT_FILE "/sys/class/leds/keyboard-backlight/brightness"
 #define GOVERNOR_FILE           "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
 
@@ -788,7 +787,8 @@ static void* kbd_thread(void* cookie)
 		}
 		else if (last_key_down != -1 && last_key_down != KEY_LEFTSHIFT &&
 				last_key_down != KEY_RIGHTSHIFT && last_key_down != KEY_CAPSLOCK &&
-				menu_handle_key(last_key_down, 1) != SELECT_ITEM)
+				last_key_down != KEY_LEFTALT && last_key_down != KEY_RIGHTALT &&
+				/*last_key_down != KEY_ALTLOCK &&*/ menu_handle_key(last_key_down, 1) != SELECT_ITEM)
 		{
 			first_accum = 1;
 			no_accum_ticks = 0;
@@ -818,7 +818,7 @@ void ui_screen_on()
 	pthread_mutex_unlock(&ui_update_mutex);
 
 	// LCD
-	ledfd = fopen(LCD_BACKLIGHT_FILE, "w");
+	ledfd = fopen(get_current_device()->lcd_backlight_file, "w");
 	bkg_on = get_current_device()->lcd_backlight_on_string;
 	fwrite(bkg_on, 1, strlen(bkg_on), ledfd);
 	fclose(ledfd);
@@ -838,7 +838,7 @@ void ui_screen_off()
 	FILE* govfd;
 	
 	// LCD
-	ledfd = fopen(LCD_BACKLIGHT_FILE, "w");
+	ledfd = fopen(get_current_device()->lcd_backlight_file, "w");
 	fwrite("0\n", 1, strlen("0\n"), ledfd);
 	fclose(ledfd);
 
@@ -941,6 +941,8 @@ void ui_init()
 
 	if (get_current_device()->has_led)
 		pthread_create(&t, NULL, led_thread, NULL);
+
+	fprintf(stderr, "UI Init Done!\n");
 }
 
 void ui_set_background(int icon)
@@ -1297,9 +1299,13 @@ void ui_user_input(const char* header, char* reply)
 		int keycode = ui_wait_key();
 		if (keycode >= 0 && keycode <= KEY_MAX)
 		{
-			char key = resolve_keypad_character(keycode, ui_key_pressed(KEY_LEFTSHIFT) | ui_key_pressed(KEY_RIGHTSHIFT) | get_capslock_state());
+			int shift = ui_key_pressed(KEY_LEFTSHIFT) | ui_key_pressed(KEY_RIGHTSHIFT) | get_capslock_state();
+			int alt = ui_key_pressed(KEY_LEFTALT) | ui_key_pressed(KEY_RIGHTALT) | get_altlock_state();
+			char key = resolve_keypad_character(keycode, shift, alt);
 			
 			if (key == CHAR_KEY_CAPSLOCK)
+				toggle_capslock_state();
+			else if (key == CHAR_KEY_ALTLOCK)
 				toggle_capslock_state();
 			else if (key == '\n')
 				break;
@@ -1328,6 +1334,9 @@ void ui_user_input(const char* header, char* reply)
 	
 	if (get_capslock_state())
 		toggle_capslock_state();
+		
+	if (get_altlock_state())
+		toggle_altlock_state();
 		
 	if (typed_characters > 0)
 	{

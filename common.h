@@ -20,7 +20,7 @@
 #include <stdio.h>
 
 //Open Recovery Version
-#define OPEN_RECOVERY_VERSION_NUMBER "2.09"
+#define OPEN_RECOVERY_VERSION_NUMBER "2.10"
 #define OPEN_RECOVERY_VERSION "Version "OPEN_RECOVERY_VERSION_NUMBER
 
 typedef struct 
@@ -37,10 +37,12 @@ typedef struct
 	// Capabilites
 	int has_led;
 	int has_qwerty;
+	int has_capslock_led;
 	int has_camera_key;
 	int has_external_sdcard;
-	
-	// LCD Backlight ON write string
+
+	// LCD backlight stuff
+	const char* lcd_backlight_file;
 	const char* lcd_backlight_on_string;
 
 } DeviceInfo;

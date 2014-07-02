@@ -31,8 +31,11 @@
 #define CHAR_KEY_DOWN        247
 
 #define CHAR_KEY_CAPSLOCK    246
+#define CHAR_KEY_ALTLOCK     245
 
-#define CHAR_SPECIAL_KEY(k)  (k >= CHAR_KEY_CAPSLOCK)
+#define CHAR_KEY_ESCAPE      244
+
+#define CHAR_SPECIAL_KEY(k)  (k >= CHAR_KEY_ESCAPE)
 
 /* Menu navigation */
 #define NO_ACTION           -1
@@ -45,6 +48,7 @@ typedef struct
 {
 	char normal[KEY_MAX+1];
 	char shifted[KEY_MAX+1];
+	char alternate[KEY_MAX+1];
 } keyboard_layout;
 
 extern keyboard_layout qwerty_layout;
@@ -52,8 +56,11 @@ extern keyboard_layout qwerty_layout;
 int get_capslock_state();
 void toggle_capslock_state();
 
+int get_altlock_state();
+void toggle_altlock_state();
+
 void init_keypad_layout();
-char resolve_keypad_character(int keycode, int shift);
+char resolve_keypad_character(int keycode, int shift, int alt);
 
 int menu_handle_key(int key_code, int visible);
 

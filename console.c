@@ -739,6 +739,9 @@ static void exit_console()
 	if (get_capslock_state())
 		toggle_capslock_state();
 	
+	if (get_altlock_state())
+		toggle_altlock_state();
+	
 	ui_set_background(BACKGROUND_ICON_ERROR);
 	ui_console_end();
 }
@@ -934,12 +937,14 @@ int run_console(const char* command)
 				continue;
 			}
 
-			char key = resolve_keypad_character(keycode, ui_key_pressed(KEY_LEFTSHIFT) | ui_key_pressed(KEY_RIGHTSHIFT) | get_capslock_state());
+			int shift = ui_key_pressed(KEY_LEFTSHIFT) | ui_key_pressed(KEY_RIGHTSHIFT) | get_capslock_state();
+			int alt = ui_key_pressed(KEY_LEFTALT) | ui_key_pressed(KEY_RIGHTALT) | get_altlock_state();
+			char key = resolve_keypad_character(keycode, shift, alt);
 
 			switch (key)
 			{
 				case 0:
-					fprintf(stderr, "evaluate_key: unhandled keycode %d.\n", keycode);
+					fprintf(stderr, "evaluate_key: unhandled keycode %d, shift %d, alt %d.\n", keycode, shift, alt);
 					key = 0;
 					break;
 
@@ -982,8 +987,15 @@ int run_console(const char* command)
 					toggle_capslock_state();
 					break;
 
+				case CHAR_KEY_ALTLOCK:
+					toggle_altlock_state();
+					break;
+
+				case CHAR_KEY_ESCAPE:
+					send_escape_sequence(childfd, "[");
+					break;
+
 				default:
-					fprintf(stderr, "run_console: Received key \"%c\".\n", key);
 					write(childfd, &key, 1);
 					break;
 			}
