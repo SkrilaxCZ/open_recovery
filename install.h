@@ -25,6 +25,7 @@ enum { INSTALL_SUCCESS, INSTALL_ERROR, INSTALL_CORRUPT };
 // cache partition.
 int install_package(const char *root_path, int* wipe_cache, const char* install_file);
 int run_shell_script(const char *command, int stdout_to_ui, int blink_led, char **extra_env_variables);
+int run_command(const char* path, const char** args);
 int sideload_package(const char* install_file);
 
 #endif  // RECOVERY_INSTALL_H_

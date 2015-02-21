@@ -424,6 +424,22 @@ default_case:
 	return WEXITSTATUS(sts);
 }
 
+int run_command(const char* path, const char** args)
+{
+	int status;
+	pid_t child;
+	if ((child = vfork()) == 0)
+	{
+		execv(path, args);
+		_exit(-1);
+	}
+	waitpid(child, &status, 0);
+	if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+		LOGE("%s failed with status %d\n", path, WEXITSTATUS(status));
+	
+	return WEXITSTATUS(status);
+}
+
 static int really_install_package(const char *path, int* wipe_cache)
 {
 	ui_print("Finding update package...\n");

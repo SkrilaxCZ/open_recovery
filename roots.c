@@ -25,8 +25,6 @@
 #include "mounts.h"
 #include "roots.h"
 #include "common.h"
-#include "make_ext4fs.h"
-#include "f2fs_fs.h"
 #include "ui.h"
 #include "install.h"
 
@@ -249,7 +247,6 @@ static int device_node_exists(const char *path)
 	return 0;
 }
 
-
 void ensure_common_roots_mounted()
 {
 	ensure_path_mounted("/system");
@@ -347,10 +344,12 @@ int format_volume(const char* volume)
 
 	if (strcmp(v->fs_type, "ext4") == 0) 
 	{
-		int result = make_ext4fs(v->device, v->length, volume, sehandle);
+        const char* args[] = { "/sbin/make_ext4fs", v->device, NULL };
+
+		int result = run_command("/sbin/make_ext4fs", args);
 		if (result != 0) 
 		{
-			LOGE("format_volume: make_extf4fs failed on %s\n", v->device);
+			LOGE("format_volume: make_ext4fs failed on %s\n", v->device);
 			return -1;
 		}
 		return 0;
@@ -358,12 +357,12 @@ int format_volume(const char* volume)
 
 	if (strcmp(v->fs_type, "f2fs") == 0) 
 	{
-		const char* args[] = { "mkfs.f2fs", v->device };
+		const char* args[] = { "/sbin/mkfs.f2fs", "-t", v->device, NULL };
 
-		int result = make_f2fs_main(2, (char**)args);
+		int result = run_command("/sbin/mkfs.f2fs", args);
 		if (result != 0) 
 		{
-			LOGE("format_volume: make_f2fs failed on %s\n", v->device);
+			LOGE("format_volume: mkfs.f2fs failed on %s\n", v->device);
 			return -1;
 		}
 		return 0;

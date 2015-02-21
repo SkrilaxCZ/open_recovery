@@ -268,7 +268,7 @@ bool retouch_one_library(const char *binary_name,
                 // the SHA-1 check will pass below.
                 int32_t zero = 0;
                 retouch_mask_data(file.data, file.size, &zero, NULL);
-                SHA(file.data, file.size, file.sha1);
+                SHA_hash(file.data, file.size, file.sha1);
             }
         }
 

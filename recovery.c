@@ -59,6 +59,7 @@
 #define ITEM_SHELL_SCRIPT_DIR  10
 #define ITEM_POWEROFF          11
 #define ITEM_SIDELOAD          12
+#define ITEM_REBOOT_BOOTLOADER 13
 
 #define ITEM_NAME_REBOOT            "reboot"
 #define ITEM_NAME_APPLY_SDCARD      "update"
@@ -75,6 +76,11 @@
 #define ITEM_NAME_SHELL_SCRIPT_DIR  "shell_dir"
 #define ITEM_NAME_POWEROFF          "poweroff"
 #define ITEM_NAME_SIDELOAD          "sideload"
+#define ITEM_NAME_REBOOT_BOOTLOADER "reboot_bootloader"
+
+#define REBOOT_ACTION_REBOOT            0
+#define REBOOT_ACTION_POWEROFF          1
+#define REBOOT_ACTION_REBOOT_BOOTLOADER 2
 
 //common
 #define CUSTOM_SHELL_SCRIPT_PATH    "/bin"
@@ -106,11 +112,55 @@ static DeviceInfo DEVICE_INFO[] = {
 	.has_capslock_led = 1,
 	.has_camera_key = 1,
 	.has_external_sdcard = 1,
+	.font_width = 10,
+	.font_height = 18,
 	.lcd_backlight_file = "/sys/class/backlight/lcd-backlight/brightness",
 	.lcd_backlight_on_string = "255\n",
 },
 {
+	.model = "XT925",
+	.name = "Motorola RAZR HD",
+	.navigation = "Use volume keys to highlight; power to select.",
+	.has_led = 1,
+	.has_qwerty = 0,
+	.has_capslock_led = 0,
+	.has_camera_key = 0,
+	.has_external_sdcard = 1,
+	.font_width = 10,
+	.font_height = 18,
+	.lcd_backlight_file = "/sys/class/backlight/lcd-backlight/brightness",
+	.lcd_backlight_on_string = "255\n",
+},
+{
+	.model = "XT1030",
+	.name = "Motorola Droid Mini",
+	.navigation = "Use volume keys to highlight; power to select.",
+	.has_led = 0,
+	.has_qwerty = 0,
+	.has_capslock_led = 0,
+	.has_camera_key = 0,
+	.has_external_sdcard = 0,
+	.font_width = 10,
+	.font_height = 18,
+	.lcd_backlight_file = "/sys/class/backlight/lcd-backlight/brightness",
+	.lcd_backlight_on_string = "127\n",
+},
+{
 	.model = "XT1080",
+	.name = "Motorola Droid Ultra",
+	.navigation = "Use volume keys to highlight; power to select.",
+	.has_led = 0,
+	.has_qwerty = 0,
+	.has_capslock_led = 0,
+	.has_camera_key = 0,
+	.has_external_sdcard = 0,
+	.font_width = 10,
+	.font_height = 18,
+	.lcd_backlight_file = "/sys/class/backlight/lcd-backlight/brightness",
+	.lcd_backlight_on_string = "127\n",
+},
+{
+	.model = "XT1080M",
 	.name = "Motorola Droid MAXX",
 	.navigation = "Use volume keys to highlight; power to select.",
 	.has_led = 0,
@@ -118,18 +168,22 @@ static DeviceInfo DEVICE_INFO[] = {
 	.has_capslock_led = 0,
 	.has_camera_key = 0,
 	.has_external_sdcard = 0,
+	.font_width = 10,
+	.font_height = 18,
 	.lcd_backlight_file = "/sys/class/backlight/lcd-backlight/brightness",
 	.lcd_backlight_on_string = "127\n",
 },
 {
 	.model = "XT1060",
-	.name = "Motorola X",
+	.name = "Moto X",
 	.navigation = "Use volume keys to highlight; power to select.",
 	.has_led = 0,
 	.has_qwerty = 0,
 	.has_capslock_led = 0,
 	.has_camera_key = 0,
 	.has_external_sdcard = 0,
+	.font_width = 10,
+	.font_height = 18,
 	.lcd_backlight_file = "/sys/class/backlight/lcd-backlight/brightness",
 	.lcd_backlight_on_string = "127\n",
 },
@@ -142,6 +196,22 @@ static DeviceInfo DEVICE_INFO[] = {
 	.has_capslock_led = 0,
 	.has_camera_key = 1,
 	.has_external_sdcard = 1,
+	.font_width = 10,
+	.font_height = 18,
+	.lcd_backlight_file = "/sys/class/leds/lcd-backlight/brightness",
+	.lcd_backlight_on_string = "255\n",
+},
+{
+	.model = "XT1225",
+	.name = "Moto MAXX",
+	.navigation = "Use volume keys to highlight; power to select.",
+	.has_led = 0,
+	.has_qwerty = 0,
+	.has_capslock_led = 0,
+	.has_camera_key = 0,
+	.has_external_sdcard = 0,
+	.font_width = 20,
+	.font_height = 36,
 	.lcd_backlight_file = "/sys/class/leds/lcd-backlight/brightness",
 	.lcd_backlight_on_string = "255\n",
 },
@@ -169,7 +239,7 @@ static const char *TEMPORARY_INSTALL_FILE = "/tmp/last_install";
 
 static const char* BASE_MENU_TITLE[] = 
 {
-	"", /* Recovery name + " Open Recovery" */
+	"", /* Phone name + " Open Recovery" */
 	OPEN_RECOVERY_VERSION,
 	"Created by Skrilax_CZ",
 	"",
@@ -179,7 +249,7 @@ static const char* BASE_MENU_TITLE[] =
 };
 
 //poweroff
-static int poweroff_on_exit = 0;
+static int reboot_action = REBOOT_ACTION_REBOOT;
 
 #define SCREEN_TIMEOUT_TIMER_OFF     -1
 #define SCREEN_TIMEOUT_SCREEN_OFF    -2
@@ -262,6 +332,8 @@ static const int MAX_LINE_LENGTH = 512;
 // battery thread
 static void* battery_thread(void *cookie)
 {
+	UNUSED(cookie);
+
 	char buffer[32];
 	int num;
 	int battery_charge = -1;
@@ -1346,6 +1418,8 @@ static int select_action(int which)
 		return ITEM_POWEROFF;
 	else if(!strcmp(MENU_ITEMS_ACTION[which], ITEM_NAME_SIDELOAD))
 		return ITEM_SIDELOAD;
+	else if(!strcmp(MENU_ITEMS_ACTION[which], ITEM_NAME_REBOOT_BOOTLOADER))
+		return ITEM_REBOOT_BOOTLOADER;
 	else 
 		return ITEM_ERROR;
 }
@@ -1398,10 +1472,11 @@ static void prompt_and_wait()
 		switch (chosen_item) 
 		{
 			case ITEM_REBOOT:
+				reboot_action = REBOOT_ACTION_REBOOT;
 				return;
 
 			case ITEM_POWEROFF:
-				poweroff_on_exit = 1;
+				reboot_action = REBOOT_ACTION_POWEROFF;
 				return;
 
 			case ITEM_WIPE_DATA:
@@ -1676,7 +1751,7 @@ static void prompt_and_wait()
 			case ITEM_CONSOLE:
 			{
 				ui_print("Opening console...\n");
-				int console_error = run_console(NULL);
+				int console_error = run_console();
 
 				if (console_error)
 					if (console_error == CONSOLE_FORCE_QUIT)
@@ -1698,6 +1773,10 @@ static void prompt_and_wait()
  				break;
 			}
 			
+			case ITEM_REBOOT_BOOTLOADER:
+				reboot_action = REBOOT_ACTION_REBOOT_BOOTLOADER;
+				return;
+			
 			case ITEM_ERROR:
 				LOGE("Unknown command: %s.\n", MENU_ITEMS_ACTION[menu_item]);
 				break;
@@ -1707,6 +1786,8 @@ static void prompt_and_wait()
 
 static void print_property(const char *key, const char *name, void *cookie) 
 {
+	UNUSED(cookie);
+
 	printf("%s=%s\n", key, name);
 }
 
@@ -1723,7 +1804,7 @@ int main(int argc, char **argv)
 	umask(S_IWGRP | S_IWOTH);
 
 	//select device
-	char device_prop[81];
+	char device_prop[PROPERTY_VALUE_MAX];
 	char top_menu_item[81];
 
 	property_get(DEVICE_INFO_PROP, device_prop, "");
@@ -1745,6 +1826,7 @@ int main(int argc, char **argv)
 
 		if (!strcmp(device_prop, DEVICE_INFO[i].model))
 		{
+			printf("Running on device %s!\n", DEVICE_INFO[i].name);
 			current_device = &(DEVICE_INFO[i]);
 			sprintf(top_menu_item, "%s Open Recovery", DEVICE_INFO[i].name);
 			BASE_MENU_TITLE[0] = (const char*)strdup(top_menu_item);
@@ -1755,12 +1837,12 @@ int main(int argc, char **argv)
 	}
 
 	//menu title
-	//keep'em malloced even if empty :p
-	char* mod_author = malloc(81);
-	char* mod_version = malloc(81);
+	//keep'em malloced even if empty
+	char* mod_author = (char*)malloc(PROPERTY_VALUE_MAX);
+	char* mod_version = (char*)malloc(PROPERTY_VALUE_MAX);
 	
-	char mod_author_prop[81];
-	char mod_version_prop[81];
+	char mod_author_prop[PROPERTY_VALUE_MAX];
+	char mod_version_prop[PROPERTY_VALUE_MAX];
 	
 	property_get(MOD_AUTHOR_PROP, mod_author_prop, "");
 	property_get(MOD_VERSION_PROP, mod_version_prop, "");
@@ -1912,15 +1994,24 @@ int main(int argc, char **argv)
 
 	// Otherwise, get ready to boot the main system...
 	finish_recovery(send_intent);
-	if (poweroff_on_exit)
+	switch (reboot_action)
 	{
-		ui_print("Powering off...\n");
-		android_reboot(ANDROID_RB_POWEROFF, 0, 0);
+		case REBOOT_ACTION_REBOOT:
+			ui_print("Rebooting...\n");
+			android_reboot(ANDROID_RB_RESTART, 0, 0);
+			break;
+			
+		case REBOOT_ACTION_POWEROFF:
+			ui_print("Powering off...\n");
+			android_reboot(ANDROID_RB_POWEROFF, 0, 0);
+			break;
+		
+		case REBOOT_ACTION_REBOOT_BOOTLOADER:
+			ui_print("Rebooting to bootloader...\n");
+			android_reboot(ANDROID_RB_RESTART2, 0, "bootloader");
+			break;
+		
 	}
-	else
-	{
-		ui_print("Rebooting...\n");
-		android_reboot(ANDROID_RB_RESTART, 0, 0);
-	}
+
 	return EXIT_SUCCESS;
 }

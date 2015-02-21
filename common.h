@@ -19,8 +19,10 @@
 
 #include <stdio.h>
 
+#define UNUSED(x) (void)(x)
+
 //Open Recovery Version
-#define OPEN_RECOVERY_VERSION_NUMBER "2.10"
+#define OPEN_RECOVERY_VERSION_NUMBER "2.11"
 #define OPEN_RECOVERY_VERSION "Version "OPEN_RECOVERY_VERSION_NUMBER
 
 typedef struct 
@@ -40,6 +42,10 @@ typedef struct
 	int has_capslock_led;
 	int has_camera_key;
 	int has_external_sdcard;
+
+	// Font
+	int font_width;
+	int font_height;
 
 	// LCD backlight stuff
 	const char* lcd_backlight_file;

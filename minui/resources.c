@@ -33,23 +33,17 @@
 
 #include "minui.h"
 
-// libpng gives "undefined reference to 'pow'" errors, and I have no
-// idea how to convince the build system to link with -lm.  We don't
-// need this functionality (it's used for gamma adjustment) so provide
-// a dummy implementation to satisfy the linker.
-double pow(double x, double y)
-{
-    return x;
-}
-
 int res_create_surface(const char* name, gr_surface* pSurface)
 {
-    char resPath[256];
+    char resPath[256] = {0};
     GGLSurface* surface = NULL;
     int result = 0;
-    unsigned char header[8];
+    unsigned char header[8] = {0};
     png_structp png_ptr = NULL;
     png_infop info_ptr = NULL;
+    png_uint_32 width, height;
+    int color_type, bit_depth;
+    png_byte channels;
 
     *pSurface = NULL;
 
@@ -99,12 +93,10 @@ int res_create_surface(const char* name, gr_surface* pSurface)
     png_set_sig_bytes(png_ptr, sizeof(header));
     png_read_info(png_ptr, info_ptr);
 
-    size_t width = info_ptr->width;
-    size_t height = info_ptr->height;
+    png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth,
+            &color_type, NULL, NULL, NULL);
+    channels = png_get_channels(png_ptr, info_ptr);
 
-    int color_type = info_ptr->color_type;
-    int bit_depth = info_ptr->bit_depth;
-    int channels = info_ptr->channels;
     if (!(bit_depth == 8 &&
           ((channels == 3 && color_type == PNG_COLOR_TYPE_RGB) ||
            (channels == 4 && color_type == PNG_COLOR_TYPE_RGBA) ||
@@ -152,7 +144,7 @@ int res_create_surface(const char* name, gr_surface* pSurface)
     int y;
     if (channels == 3 || (channels == 1 && color_type != PNG_COLOR_TYPE_GRAY && !alpha))
     {
-        for (y = 0; y < height; ++y)
+        for (y = 0; y < (int)height; ++y)
         {
             unsigned char* pRow = pData + y * stride;
             png_read_row(png_ptr, pRow, NULL);
@@ -175,7 +167,7 @@ int res_create_surface(const char* name, gr_surface* pSurface)
     }
     else
     {
-        for (y = 0; y < height; ++y)
+        for (y = 0; y < (int)height; ++y)
         {
             unsigned char* pRow = pData + y * stride;
             png_read_row(png_ptr, pRow, NULL);

@@ -865,6 +865,7 @@ void ui_screen_off()
 
 void ui_init()
 {
+	gr_init_font_properties(get_current_device()->font_width, get_current_device()->font_height);
 	gr_init();
 	ev_init(input_callback, NULL);
 	

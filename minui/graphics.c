@@ -50,10 +50,6 @@ struct {
     unsigned cheight;
     const char* resource;
 } font = {
-    .width    = 960,
-    .height   = 18,
-    .cwidth   = 10,
-    .cheight  = 18,
     .resource = "font"
 };
 
@@ -408,6 +404,14 @@ static void gr_init_font(void)
     gr_font_l->cwidth = font.cwidth;
     gr_font_l->cheight = font.cheight;
     gr_font_l->ascent = font.cheight - 2;
+}
+
+void gr_init_font_properties(int cwidth, int cheight)
+{
+    font.width    = 96 * cwidth;
+    font.height   = cheight;
+    font.cwidth   = cwidth;
+    font.cheight  = cheight;
 }
 
 int gr_init(void)

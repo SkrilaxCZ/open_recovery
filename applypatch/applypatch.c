@@ -90,7 +90,7 @@ int LoadFileContents(const char* filename, FileContents* file,
         }
     }
 
-    SHA(file->data, file->size, file->sha1);
+    SHA_hash(file->data, file->size, file->sha1);
     return 0;
 }
 
@@ -287,7 +287,7 @@ static int LoadPartitionContents(const char* filename, FileContents* file) {
 // Save the contents of the given FileContents object under the given
 // filename.  Return 0 on success.
 int SaveFileContents(const char* filename, FileContents file) {
-    int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC);
+    int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC, S_IRUSR | S_IWUSR);
     if (fd < 0) {
         printf("failed to open \"%s\" for write: %s\n",
                filename, strerror(errno));
@@ -735,7 +735,8 @@ int applypatch(const char* source_filename,
             strcpy(outname, target_filename);
             strcat(outname, ".patch");
 
-            output = open(outname, O_WRONLY | O_CREAT | O_TRUNC);
+            output = open(outname, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC,
+                S_IRUSR | S_IWUSR);
             if (output < 0) {
                 printf("failed to open output file %s: %s\n",
                        outname, strerror(errno));

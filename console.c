@@ -124,6 +124,8 @@ static void draw_console_cursor(int row, int column, char letter)
 
 static void* console_cursor_thread(void *cookie)
 {
+	UNUSED(cookie);
+
 	while (ui_get_view_mode() == VIEWMODE_CONSOLE)
 	{
 		clock_t time_now = clock();
@@ -748,7 +750,7 @@ static void exit_console()
 
 static int create_subprocess(const char* cmd, const char* arg0, const char* arg1, pid_t* process_id) 
 {
-	char* devname;
+	char devname[256];
 	int ptm;
 	pid_t pid;
 
@@ -761,8 +763,7 @@ static int create_subprocess(const char* cmd, const char* arg0, const char* arg1
 
 	fcntl(ptm, F_SETFD, FD_CLOEXEC);
 
-	if(grantpt(ptm) || unlockpt(ptm) ||
-			((devname = (char*) ptsname(ptm)) == 0))
+	if(grantpt(ptm) || unlockpt(ptm) || (ptsname_r(ptm, devname, sizeof(devname)) != 0) )
 	{
 		fprintf(stderr, "[ trouble with /dev/ptmx - %s ]\n", strerror(errno));
 		return -1;
@@ -826,6 +827,8 @@ static volatile int console_read_thread_terminated;
 
 static void* console_read_thread(void *cookie)
 {
+	UNUSED(cookie);
+
 	//buffer for pipe
 	char buffer[1024+1];
 	int sts;
@@ -855,7 +858,7 @@ static void* console_read_thread(void *cookie)
 	return NULL;
 }
 
-int run_console(const char* command)
+int run_console()
 {
 	init_console();
 

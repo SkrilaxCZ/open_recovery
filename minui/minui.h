@@ -22,6 +22,7 @@
 typedef void* gr_surface;
 typedef unsigned short gr_pixel;
 
+void gr_init_font_properties(int cwidth, int cheight);
 int gr_init(void);
 void gr_exit(void);
 

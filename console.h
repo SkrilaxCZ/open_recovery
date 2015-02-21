@@ -28,8 +28,8 @@ extern color console_front_color;
 
 extern color console_term_colors[16];
 
-//runs the console in the current thread with optional initial command
-int run_console(const char* command);
+//runs the console in the current thread
+int run_console();
 
 //shows the console
 void ui_console_begin();

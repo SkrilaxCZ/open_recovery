@@ -22,21 +22,17 @@ LOCAL_FORCE_STATIC_EXECUTABLE := true
 RECOVERY_API_VERSION := 3
 LOCAL_CFLAGS += -DRECOVERY_API_VERSION=$(RECOVERY_API_VERSION)
 
-LOCAL_STATIC_LIBRARIES :=
-
 # This binary is in the recovery ramdisk, which is otherwise a copy of root.
 # It gets copied there in config/Makefile.  LOCAL_MODULE_TAGS suppresses
 # a (redundant) copy of the binary in /system/bin for user builds.
 # TODO: Build the ramdisk image in a more principled way.
 
-LOCAL_MODULE_TAGS := eng
+LOCAL_MODULE_TAGS := optional
 
-LOCAL_STATIC_LIBRARIES += libmake_f2fs libext4_utils libz
-LOCAL_STATIC_LIBRARIES += libminzip libunz libmincrypt
-LOCAL_STATIC_LIBRARIES += libminui libpixelflinger_static libpng libcutils
-LOCAL_STATIC_LIBRARIES += libstdc++ libc
-
-LOCAL_C_INCLUDES += external/f2fs-tools/include system/extras/ext4_utils
+LOCAL_STATIC_LIBRARIES += libz
+LOCAL_STATIC_LIBRARIES += libminzip libunz libmincrypt libselinux
+LOCAL_STATIC_LIBRARIES += libminui libpixelflinger_static libpng libm liblog libcutils
+LOCAL_STATIC_LIBRARIES += libc
 
 include $(BUILD_EXECUTABLE)
 
